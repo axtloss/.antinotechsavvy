@@ -7,10 +7,10 @@ import os
 import re
 
 
-#with open("hello.txt", "wb") as f:
-#    f.write(b"Hello Python!\n")
+with open("hello.txt", "wb") as f:
+    f.write(b"Hello World!\n")
 
-#copyfile("hello.txt", "hello.txt.antinotech")
+copyfile("hello.txt", "hello.txt.antinotech")
 
 def encrypt():
     with open("hello.txt.antinotech", "r+b") as f:
@@ -57,5 +57,5 @@ def decrypt():
         print(contentencr)
         mm.close
         print(content.decode("utf-8"))
-decrypt()
-#encrypt()
+#decrypt()
+encrypt()
