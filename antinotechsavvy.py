@@ -78,14 +78,14 @@ elif len(sys.argv) <= 2:
 command = sys.argv[1]
 if command in Decrypt:
     if len(sys.argv) == 3:
-        outfile = sys.argv[2]+".antinotech"
+        outfile = sys.argv[2].strip(".antinotech")
     else:
         outfile = sys.argv[3]
     decrypt(sys.argv[2], outfile)
 elif command in Encrypt:
     print(command)
     if len(sys.argv) == 3:
-        outfile = sys.argv[2].strip(".antinotech")
+        outfile = sys.argv[2]+".antinotech"
     else:
         outfile = sys.argv[3]
     print(sys.argv[2])
