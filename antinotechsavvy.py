@@ -4,6 +4,7 @@ from Crypto.Cipher import AES
 from shutil import copyfile
 import os
 import sys
+import re
 
 Decrypt = ["decrypt","-d"]
 Encrypt = ["encrypt","-e"]
@@ -23,53 +24,65 @@ def encrypt(file, outfile):
     copyfile(file, outfile)
     with open(outfile, "r+b") as f:
         mm = mmap.mmap(f.fileno(),0)
-        content = mm.readline()
+        content = mm.read()
         aes_key = os.urandom(16)
         iv = os.urandom(16)
-        print(aes_key)
-        print(iv)
+        #print(aes_key)
+        #print(iv)
         aes = AES.new(aes_key, AES.MODE_CBC, iv)
         extra = len(content) % 16
+        i = 0
         if extra > 0:
             content = content + (b'-' * (16 - extra))
+        #print(16-extra)
         contentaes=aes.encrypt(content)
-        print(content)
-        print(contentaes)
+        #print(len(content))
+        #print(contentaes)
+        #print(len(contentaes))
         mm.flush()
         mm.close
-        f.write(contentaes+b"aes"+aes_key+b"AES"+iv)
+        f.write(contentaes+b"AESKEYBEGIN"+aes_key+b"AESKEYEND"+iv+b"PADDINGBEGIN"+bytes(str(16-extra), "utf-8"))
 
 def decrypt(file, outfile):
     with open(file, "r+b") as f:
         mm = mmap.mmap(f.fileno(),0)
-        mm.seek(mm.find(b"aes"))
+        mm.seek(mm.find(b'PADDINGBEGIN',0))
+        mm.seek(mm.tell()+12)
+        paddinglen=int(mm.readline().decode("utf-8"))
+        mm.seek(0)
+        mm.seek(mm.find(b"AESKEYBEGIN"))
         currloc=mm.tell()
-        print(currloc)
+        #print(currloc)
         mm.seek(0)
         #currloc=mm.tell()
-        print(currloc)
+        #print(currloc)
         content=mm.read(currloc)
-        print(content)
-        mm.seek(mm.find(b"aes",0))
-        print(mm.tell())
-        mm.seek(mm.tell()+3)
+        #print(content)
+        mm.seek(mm.find(b"AESKEYBEGIN",0))
+        #print(mm.tell())
+        mm.seek(mm.tell()+11)
         aes_key=(mm.read(16))
-        print(aes_key)
-        print(mm.find(b"AES",0))
-        mm.seek(mm.find(b"AES",0))
-        mm.seek(mm.tell()+3)
+        #print(aes_key)
+        #print(mm.find(b"AESKEYEND",0))
+        mm.seek(mm.find(b"AESKEYEND",0))
+        mm.seek(mm.tell()+9)
         iv=mm.read(16)
-        print(iv)
+        #print(iv)
         contentstr=str(content)
-        print(contentstr)
-        print(len(content))
+        #print(contentstr)
+        #print(len(content))
         aes = AES.new(aes_key, AES.MODE_CBC, iv)
         contentencr=aes.decrypt(content)
+        #print(len(contentencr))
         mm.close
     with open(outfile, "wb") as f:
-        output=contentencr.decode("utf-8")
-        output=output.strip("-")
-        f.write(bytes(output,"utf-8"))
+        f.write(contentencr)
+    file = open(outfile).read()
+    new_file = file[:-paddinglen]
+    os.remove(outfile)
+    open(outfile, 'w').write(new_file)
+
+
 
 if len(sys.argv) <= 1:
     help()
@@ -78,12 +91,15 @@ elif len(sys.argv) <= 2:
 command = sys.argv[1]
 if command in Decrypt:
     if len(sys.argv) == 3:
-        outfile = sys.argv[2].strip(".antinotech")
+        if ".antinotechsavvy" in sys.argv[2]:
+            outfile = sys.argv[2][:-11]
+        else:
+            outfile = sys.argv[2]+".decrypted"
     else:
         outfile = sys.argv[3]
     decrypt(sys.argv[2], outfile)
 elif command in Encrypt:
-    print(command)
+    #print(command)
     if len(sys.argv) == 3:
         outfile = sys.argv[2]+".antinotech"
     else:
